@@ -10,11 +10,12 @@ haven't worked with Grid Engine for some while but it worked about one year
 ago).
 
 TODO:
-	- add documentation
-    - remove some obsolete variables
-    - replace 'shell' by 'executable'
-    - use 'somepattern'.format(...) instead of old 'somepattern' % (...) style
-    - make it work under windows
+
+- add documentation
+- remove some obsolete variables
+- replace 'shell' by 'executable'
+- use 'somepattern'.format(...) instead of old 'somepattern' % (...) style
+- make it work under windows
 
 
 Dependencies
