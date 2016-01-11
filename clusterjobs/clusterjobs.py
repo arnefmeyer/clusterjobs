@@ -287,7 +287,7 @@ class ClusterBatch():
 
     def __init__(self, script, parameters, tempdir, template_job=None,
                  verbose=True, compute_local=False, n_parallel=-1,
-                 format='npz', **kwargs):
+                 format='pickle', **kwargs):
 
         self.script = script
         self.parameters = parameters
