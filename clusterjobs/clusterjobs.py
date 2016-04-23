@@ -48,20 +48,42 @@ def _submit_job_parallel(job):
 
 
 class ClusterJob():
-    """A simple job class wrapping command line arguments like qsub"""
+    """A simple job class wrapping command line arguments like qsub
+
+    Parameters
+    ----------
+    script : string
+        Path of the script to be submitted. A copy will be made when submitting
+        the job.
+    arguments : list
+        a list of script arguments
+    queue : string
+        name of the queue for job submission
+    name : string
+        name of the job
+    temp_dir : string
+        directory for temporary files
+    mem_request : int
+        memory request for the job in MB
+    time_request : int
+        time request in seconds
+    init_bashrc : bool
+        If set to true .bashrc will be initialized before running the job
+        to set additional paths and variables
+    call_func : string
+        Call the function "call_func" from python script with given arguments.
+        The arguments can be either a dict or a pickle file containing
+    is_click_command : bool
+        Set this to True if call_func is a click command (see click package)
+
+    """
 
     def __init__(self, script, arguments='', queue='', name='', email=None,
                  tempdir='', copy=True, mem_request=None, time_request=None,
                  stdout='', stderr='', verbose=False, shell='python',
                  account=None, n_workers=1, compute_local=False, backend=None,
-                 init_bashrc=True, call_func=None):
-        """
-            script - path to the script to be submitted
-            arguments - a list of script arguments
-            mem_request - memory request in MB
-            time_request - time request in seconds
+                 init_bashrc=True, call_func=None, is_click_command=False):
 
-        """
         self.script = script
         self.arguments = arguments
         self.queue = queue
@@ -81,6 +103,7 @@ class ClusterJob():
         self.init_bashrc = init_bashrc
         self.shell = shell
         self.call_func = call_func
+        self.is_click_command = is_click_command
 
     def submit(self):
         """submit job using qsub or slurm backend"""
@@ -149,18 +172,23 @@ class ClusterJob():
         script_name = path.splitext(script_f)[0]
         cmd = "import sys; sys.path.append('%s');" % script_dir
 
+        func_name = self.call_func
+        func_call = self.call_func
+        if self.is_click_command:
+            func_call += '.callback'
+
         # unpack arguments from file?
         args = self.arguments
         if args.endswith('.pickle') or args.endswith('.pkl'):
             cmd += "import pickle;"
             cmd += "dd=pickle.load(open('%s', 'r'));" % args
             cmd += "from %s import %s; %s(**dd);" % (script_name,
-                                                     self.call_func,
-                                                     self.call_func)
+                                                     func_name,
+                                                     func_call)
         else:
             cmd += "from %s import %s; %s('%s');" % (script_name,
-                                                     self.call_func,
-                                                     self.call_func,
+                                                     func_name,
+                                                     func_call,
                                                      args)
 
         return cmd
