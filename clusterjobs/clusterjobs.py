@@ -129,7 +129,7 @@ class ClusterJob():
         backend = self.backend
 
         if backend is None:
-            backend = _detect_backend()
+            backend = detect_backend()
 
         if self.compute_local or backend is None:
             print "Could not detect HPC backend." \
@@ -419,7 +419,7 @@ class ClusterBatch():
                 n_parallel = self.n_parallel
 
             pool = mp.Pool(processes=n_parallel)
-            pool.map(_submit_job_parallel, jobs)
+            pool.map(submit_job_parallel, jobs)
 
         else:
             for job in jobs:

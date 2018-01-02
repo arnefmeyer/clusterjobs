@@ -4,7 +4,8 @@
 # Author: Arne F. Meyer <arne.f.meyer@gmail.com>
 # License: GPLv2
 
-from clusterjobs import ClusterJob, ClusterBatch
+from clusterjobs import ClusterJob, ClusterBatch, detect_backend
 
 __all__ = ['ClusterJob',
-           'ClusterBatch']
+           'ClusterBatch',
+           'detect_backend']
