@@ -29,7 +29,7 @@ import multiprocessing as mp
 import pickle
 
 
-def _detect_backend(order=['sbatch', 'qsub']):
+def detect_backend(order=['sbatch', 'qsub']):
 
     infos = {'sbatch': 'SLURM', 'qsub': 'GridEngine'}
     for cmd in order:
@@ -42,7 +42,7 @@ def _detect_backend(order=['sbatch', 'qsub']):
     return None
 
 
-def _submit_job_parallel(job):
+def submit_job_parallel(job):
 
     job.submit()
 
