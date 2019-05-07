@@ -16,6 +16,11 @@ TODO:
 
 """
 
+from __future__ import print_function
+
+from builtins import bytes
+from past.builtins import reduce
+
 import os
 from os import path
 import subprocess
@@ -35,6 +40,9 @@ def detect_backend(order=['sbatch', 'qsub']):
     for cmd in order:
         res = subprocess.Popen("command -v %s" % cmd, shell=True,
                                stdout=subprocess.PIPE).stdout.read()
+
+        if isinstance(res, bytes):
+            res = res.decode()
 
         if cmd in res:
             return infos[cmd]
@@ -132,8 +140,8 @@ class ClusterJob():
             backend = detect_backend()
 
         if self.compute_local or backend is None:
-            print "Could not detect HPC backend." \
-                  "Computing on local computer instead!"
+            print("Could not detect HPC backend."
+                  "Computing on local computer instead!")
 
             if self.call_func is None:
                 subprocess.call(['/bin/bash', '-i', '-c',
@@ -158,11 +166,11 @@ class ClusterJob():
                 cmd = 'sbatch %s' % batch_file
 
             if self.verbose:
-                print 'Submitting job'
-                print '  backend:', backend
-                print '  temporary directory: %s' % self.tempdir
-                print '  script file: %s' % script_file
-                print '  arguments:', self.arguments
+                print('Submitting job')
+                print('  backend:', backend)
+                print('  temporary directory: %s' % self.tempdir)
+                print('  script file: %s' % script_file)
+                print('  arguments:', self.arguments)
 
             os.system(cmd)
 
@@ -181,7 +189,7 @@ class ClusterJob():
         args = self.arguments
         if args.endswith('.pickle') or args.endswith('.pkl'):
             cmd += "import pickle;"
-            cmd += "dd=pickle.load(open('%s', 'r'));" % args
+            cmd += "dd=pickle.load(open('%s', 'rb'));" % args
             cmd += "from %s import %s; %s(**dd);" % (script_name,
                                                      func_name,
                                                      func_call)
@@ -341,8 +349,8 @@ class ClusterBatch():
                 break
 
         if self.verbose:
-            print "temp. dir: %s" % tmpdir
-            print "log dir: %s" % logdir
+            print("temp. dir: %s" % tmpdir)
+            print("log dir: %s" % logdir)
 
         # Create combinations of all parameters
         paramkeys = self.parameters.keys()
@@ -359,7 +367,7 @@ class ClusterBatch():
         jobs = []
         n_jobs = len(params)
         if self.verbose:
-            print "creating %d jobs ..." % n_jobs,
+            print("creating %d jobs ..." % n_jobs,)
             t0 = time()
 
         for i in range(n_jobs):
@@ -387,7 +395,7 @@ class ClusterBatch():
             elif self.format in ['pkl', 'pickle']:
 
                 param_file += '.pickle'
-                with open(param_file, 'w') as f:
+                with open(param_file, 'wb') as f:
                     pickle.dump(param_dict, f)
 
             # Standard output and error log
@@ -408,8 +416,8 @@ class ClusterBatch():
             jobs.append(job)
 
         if self.verbose:
-            print "done in %0.2f seconds" % (time() - t0)
-            print "submitting jobs ..."
+            print("done in %0.2f seconds" % (time() - t0))
+            print("submitting jobs ...")
             t0 = time()
 
         if self.compute_local and self.n_parallel != 1:
@@ -418,15 +426,19 @@ class ClusterBatch():
             else:
                 n_parallel = self.n_parallel
 
-            pool = mp.Pool(processes=n_parallel)
-            pool.map(submit_job_parallel, jobs)
+            if n_parallel == 1:
+                for job in jobs:
+                    job.submit()
+            else:
+                pool = mp.Pool(processes=n_parallel)
+                pool.map(submit_job_parallel, jobs)
 
         else:
             for job in jobs:
                 job.submit()
 
         if self.verbose:
-            print "done in %0.2f seconds" % (time() - t0)
+            print("done in %0.2f seconds" % (time() - t0))
 
 
 if __name__ == '__main__':
@@ -436,11 +448,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         data = np.load(sys.argv[1])
         a = data['a'].item()
-        print "starting job", a
+        print("starting job", a)
 
         X = np.random.randn(1000, 1000)
         whatever = np.linalg.svd(X)
-        print "finished job", a
+        print("finished job", a)
 
     else:
         user_dir = path.expanduser('~')
