@@ -32,6 +32,7 @@ import numpy as np
 import socket
 import multiprocessing as mp
 import pickle
+import pwd
 
 
 def detect_backend(order=['sbatch', 'qsub']):
@@ -55,7 +56,11 @@ def submit_job_parallel(job):
     job.submit()
 
 
-class ClusterJob():
+def get_username():
+    return pwd.getpwuid( os.getuid())[0]
+
+
+class ClusterJob(object):
     """A simple job class wrapping command line arguments like qsub
 
     Parameters
@@ -83,19 +88,38 @@ class ClusterJob():
         The arguments can be either a dict or a pickle file containing
     is_click_command : bool
         Set this to True if call_func is a click command (see click package)
-
+    export_display : bool
+        Add export DISPLAY=:0 to slurm script
     """
 
-    def __init__(self, script, arguments='', queue='', name='', email=None,
-                 tempdir='', copy=True, mem_request=None, time_request=None,
-                 stdout='', stderr='', verbose=False, shell='python',
-                 account=None, n_workers=1, compute_local=False, backend=None,
-                 init_bashrc=True, call_func=None, is_click_command=False):
+    def __init__(self, script,
+                 arguments='',
+                 queue='',
+                 name='',
+                 user=None,
+                 email=None,
+                 tempdir='',
+                 copy=True,
+                 mem_request=None,
+                 time_request=None,
+                 stdout='',
+                 stderr='',
+                 verbose=False,
+                 shell='python',
+                 account=None,
+                 n_workers=1,
+                 compute_local=False,
+                 backend=None,
+                 init_bashrc=True,
+                 call_func=None,
+                 is_click_command=False,
+                 export_display=True):
 
         self.script = script
         self.arguments = arguments
         self.queue = queue
         self.name = name
+        self.user = user
         self.email = email
         self.tempdir = tempdir
         self.copy = copy
@@ -112,6 +136,7 @@ class ClusterJob():
         self.shell = shell
         self.call_func = call_func
         self.is_click_command = is_click_command
+        self.export_display = export_display
 
     def submit(self):
         """submit job using qsub or slurm backend"""
@@ -281,9 +306,9 @@ class ClusterJob():
 
             if self.mem_request is not None:
                 if self.n_workers > 1:
-                    f.write("#SBTACH --mem-per-cpu=%d\n" % self.mem_request)
+                    f.write("#SBATCH --mem-per-cpu=%d\n" % self.mem_request)
                 else:
-                    f.write("#SBTACH --mem=%d\n" % self.mem_request)
+                    f.write("#SBATCH --mem=%d\n" % self.mem_request)
 
             if self.time_request is not None:
                 f.write("#SBATCH --time=%02d:%02d:%02d\n" %
@@ -294,6 +319,13 @@ class ClusterJob():
             if self.stderr != '':
                 f.write("#SBATCH -e %s\n" % self.stderr)
 
+            if self.user is None:
+                user = get_username()
+            else:
+                user = self.user
+
+            f.write('#SBATCH --uid=%s\n' % user)
+
             if self.email is not None:
                 f.write("#SBATCH --mail-user %s\n" % self.email)
                 f.write("#SBATCH --mail-type=ALL\n")
@@ -301,6 +333,9 @@ class ClusterJob():
             if self.init_bashrc is not None:
                 f.write("source %s\n" % path.join(path.expanduser('~'),
                                                   '.bashrc'))
+
+            if self.export_display:
+                f.write("export DISPLAY=:0")
 
             f.write("export TERM=xterm;\n")
 
@@ -318,7 +353,7 @@ class ClusterJob():
             f.write("exit\n")
 
 
-class ClusterBatch():
+class ClusterBatch(object):
     """Automatically create a batch of cluster jobs"""
 
     def __init__(self, script, parameters, tempdir, template_job=None,
