@@ -335,7 +335,7 @@ class ClusterJob(object):
                                                   '.bashrc'))
 
             if self.export_display:
-                f.write("export DISPLAY=:0")
+                f.write("export DISPLAY=:0\n")
 
             f.write("export TERM=xterm;\n")
 
