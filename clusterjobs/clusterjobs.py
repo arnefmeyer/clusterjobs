@@ -108,6 +108,7 @@ class ClusterJob(object):
                  shell='python',
                  account=None,
                  n_workers=1,
+                 n_cores=1,
                  compute_local=False,
                  backend=None,
                  init_bashrc=True,
@@ -129,6 +130,7 @@ class ClusterJob(object):
         self.stderr = stderr
         self.verbose = verbose
         self.n_workers = n_workers
+        self.n_cores = n_cores
         self.compute_local = compute_local
         self.backend = backend
         self.account = account
@@ -299,7 +301,11 @@ class ClusterJob(object):
                 partition = 'compute'
             f.write("#SBATCH -p %s\n" % partition)
 
-            f.write("#SBATCH -N %d\n" % self.n_workers)
+            f.write("#SBATCH --nodes=%d\n" % self.n_workers)
+
+            if self.n_cores > 1:
+                f.write("#SBATCH --ntasks=1\n")
+                f.write("#SBATCH --cpus-per-task=%d\n" % self.n_cores)
 
             if self.account is not None:
                 f.write('#SBATCH -A %s' % self.account)
